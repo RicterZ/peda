@@ -6,33 +6,24 @@
 #       License: see LICENSE file for details
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import random
 import socket
 import struct
 import traceback
-import six.moves.http_client
-from six.moves import range
+import http.client
 import sys
 
 import config
 from utils import msg, error_msg
 
-if sys.version_info.major == 3:
-    from urllib.request import urlopen
-    from urllib.parse import urlencode
-    pyversion = 3
-else:
-    from urllib import urlopen
-    from urllib import urlencode
-    pyversion = 2
+from urllib.request import urlopen
+from urllib.parse import urlencode
+pyversion = 3
 
 def _make_values_bytes(dict_):
     """Make shellcode in dictionaries bytes"""
-    return {k: six.b(v) for k, v in dict_.items()}
+    return {k: v.encode('latin-1') for k, v in dict_.items()}
 
 
 shellcode_x86_linux = _make_values_bytes({
@@ -310,7 +301,7 @@ class Shellcode():
             return None
         try:
             msg("Connecting to shell-storm.org...")
-            s = six.moves.http_client.HTTPConnection("shell-storm.org")
+            s = http.client.HTTPConnection("shell-storm.org")
 
             s.request("GET", "/api/?s="+str(keyword))
             res = s.getresponse()
@@ -348,7 +339,7 @@ class Shellcode():
 
         try:
             msg("Connecting to shell-storm.org...")
-            s = six.moves.http_client.HTTPConnection("shell-storm.org")
+            s = http.client.HTTPConnection("shell-storm.org")
         except:
             error_msg("Cannot connect to shell-storm.org")
             return None

@@ -6,9 +6,6 @@
 #       License: see LICENSE file for details
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tempfile
 import pprint
@@ -23,10 +20,7 @@ from subprocess import *
 import config
 import codecs
 
-import six
-from six import StringIO
-from six.moves import range
-from six.moves import input
+from io import StringIO
 
 # http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
 # http://stackoverflow.com/questions/8856164/class-decorator-decorating-method-in-python
@@ -192,7 +186,7 @@ class message(object):
         if not teefd:
             teefd = config.Option.get("_teefd")
 
-        if isinstance(text, six.string_types) and "\x00" not in text:
+        if isinstance(text, str) and "\x00" not in text:
             print(colorize(text, color, attrib), file=self.out)
             if teefd:
                 print(colorize(text, color, attrib), file=teefd)
@@ -291,9 +285,9 @@ def is_printable(text, printables=""):
     """
     Check if a string is printable
     """
-    if six.PY3 and isinstance(text, six.string_types):
-        text = six.b(text)
-    return set(text) - set(six.b(string.printable) + six.b(printables)) == set()
+    if isinstance(text, str):
+        text = text.encode('latin-1')
+    return set(text) - set(string.printable.encode('latin-1') + printables.encode('latin-1')) == set()
 
 def is_math_exp(str):
     """
@@ -367,7 +361,7 @@ def hex2str(hexnum, intsize=4):
     """
     Convert a number in hex format to string
     """
-    if not isinstance(hexnum, six.string_types):
+    if not isinstance(hexnum, str):
         nbits = intsize * 8
         hexnum = "0x%x" % ((hexnum + (1 << nbits)) % (1 << nbits))
     s = hexnum[2:]
@@ -713,138 +707,26 @@ def cyclic_pattern_search(buf):
     return result
 
 
-def _decode_string_escape_py2(str_):
-    """
-    Python2 string escape
-
-    Do not use directly, instead use decode_string.
-    """
-    return str_.decode('string_escape')
-
-
-def _decode_string_escape_py3(str_):
-    """
-    Python3 string escape
-
-    Do not use directly, instead use decode_string.
-    """
-
-    # Based on: http://stackoverflow.com/a/4020824
+def decode_string_escape(str_):
     return codecs.decode(str_, "unicode_escape")
 
 
-def decode_string_escape(str_):
-    """Generic Python string escape"""
-    raise Exception('Should be overriden')
-
-
 def bytes_iterator(bytes_):
-    """
-    Returns iterator over a bytestring. In Python 2, this is just a str. In
-    Python 3, this is a bytes.
-
-    Wrap this around a bytestring when you need to iterate to be compatible
-    with Python 2 and Python 3.
-    """
-    raise Exception('Should be overriden')
-
-
-def _bytes_iterator_py2(bytes_):
-    """
-    Returns iterator over a bytestring in Python 2.
-
-    Do not call directly, use bytes_iterator instead
-    """
-    for b in bytes_:
-        yield b
-
-
-def _bytes_iterator_py3(bytes_):
-    """
-    Returns iterator over a bytestring in Python 3.
-
-    Do not call directly, use bytes_iterator instead
-    """
     for b in bytes_:
         yield bytes([b])
 
 
 def bytes_chr(i):
-    """
-    Returns a byte string  of length 1 whose ordinal value is i. In Python 2,
-    this is just a str. In Python 3, this is a bytes.
-
-    Use this instead of chr to be compatible with Python 2 and Python 3.
-    """
-    raise Exception('Should be overriden')
-
-
-def _bytes_chr_py2(i):
-    """
-    Returns a byte string  of length 1 whose ordinal value is i in Python 2.
-
-    Do not call directly, use bytes_chr instead.
-    """
-    return chr(i)
-
-
-def _bytes_chr_py3(i):
-    """
-    Returns a byte string  of length 1 whose ordinal value is i in Python 3.
-
-    Do not call directly, use bytes_chr instead.
-    """
     return bytes([i])
 
 
 def to_binary_string(text):
-    """
-    Converts a string to a binary string if it is not already one. Returns a str
-    in Python 2 and a bytes in Python3.
-
-    Use this instead of six.b when the text may already be a binary type
-    """
-    raise Exception('Should be overriden')
-
-
-def _to_binary_string_py2(text):
-    """
-    Converts a string to a binary string if it is not already one. Returns a str
-    in Python 2 and a bytes in Python3.
-
-    Do not use directly, use to_binary_string instead.
-    """
-    return str(text)
-
-
-def _to_binary_string_py3(text):
-    """
-    Converts a string to a binary string if it is not already one. Returns a str
-    in Python 2 and a bytes in Python3.
-
-    Do not use directly, use to_binary_string instead.
-    """
-    if isinstance(text, six.binary_type):
+    if isinstance(text, bytes):
         return text
-    elif isinstance(text, six.string_types):
-        return six.b(text)
+    elif isinstance(text, str):
+        return text.encode('latin-1')
     else:
         raise Exception('only takes string types')
-
-
-# Select functions based on Python version
-if six.PY2:
-    decode_string_escape = _decode_string_escape_py2
-    bytes_iterator = _bytes_iterator_py2
-    bytes_chr = _bytes_chr_py2
-    to_binary_string = _to_binary_string_py2
-elif six.PY3:
-    decode_string_escape = _decode_string_escape_py3
-    bytes_iterator = _bytes_iterator_py3
-    bytes_chr = _bytes_chr_py3
-    to_binary_string = _to_binary_string_py3
-else:
-    raise Exception("Could not identify Python major version")
 
 
 def dbg_print_vars(*args):
@@ -867,7 +749,7 @@ def string_repr(text, show_quotes=True):
 
     Optionally can show or include quotes.
     """
-    if six.PY3 and isinstance(text, six.binary_type):
+    if isinstance(text, bytes):
         # Skip leading 'b' at the beginning of repr
         output = repr(text)[1:]
     else:

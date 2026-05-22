@@ -5,9 +5,6 @@
 #       License: see LICENSE file for details
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import re
 import os
@@ -25,14 +22,7 @@ if os.path.islink(PEDAFILE):
     PEDAFILE = os.readlink(PEDAFILE)
 sys.path.insert(0, os.path.dirname(PEDAFILE) + "/lib/")
 
-# Use six library to provide Python 2/3 compatibility
-import six
-from six.moves import range
-from six.moves import input
-try:
-    import six.moves.cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 
 
@@ -214,7 +204,7 @@ class PEDA(object):
                 try:
                     v = eval("%s" % a)
                     # XXX hack to avoid builtin functions/types
-                    if not isinstance(v, six.string_types + six.integer_types):
+                    if not isinstance(v, (str, int)):
                         continue
                     args[idx] = "%s" % (to_hex(v) if to_int(v) != None else v)
                 except:
@@ -1894,7 +1884,7 @@ class PEDA(object):
         if not mem:
             return result
 
-        if isinstance(search, six.string_types) and search.startswith("0x"):
+        if isinstance(search, str) and search.startswith("0x"):
             # hex number
             search = search[2:]
             if len(search) %2 != 0:
@@ -3263,7 +3253,7 @@ class PEDACmd(object):
             for a in arg:
                 try:
                     s = eval('%s' % a)
-                    if isinstance(s, six.integer_types + six.string_types):
+                    if isinstance(s, (int, str)):
                         a = s
                 except:
                     pass
